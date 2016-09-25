@@ -15,7 +15,7 @@ import edu.columbia.advancedb.bing.vo.AppDocument;
  */
 public class MainClass {
 	
-	public static String ACCOUNT_KEY = "zwdDE6X7sdfQJFaccidYZ9xFhXssOH+buQuMn2Owv9g";
+	//public static String ACCOUNT_KEY = "zwdDE6X7sdfQJFaccidYZ9xFhXssOH+buQuMn2Owv9g";
 	
 	// Will be instantiated upon execution start. Use stopWords.isStopWord(str) to check if it is stop word.
 	public static StopWords stopWords;
