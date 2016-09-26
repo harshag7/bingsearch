@@ -25,11 +25,12 @@ public class BingSearch {
         searchText = searchText.replaceAll(" ", "%20");
 		
 		List<AppDocument> docs = new ArrayList<>();
-		String query=BING_URL + "?%27" + searchText + "%27&" + EXTRA_PARAMS;
+		String query=BING_URL + "?Query=%27" + searchText + "%27&" + EXTRA_PARAMS;
 		
 		byte[] accountKeyBytes = Base64.encodeBase64((accountKey + ":" + accountKey).getBytes());
 		String accountKeyEnc = new String(accountKeyBytes);
 
+		System.out.println("Bing web query: " + query);
 		URL url = new URL(query);
 		URLConnection urlConnection = url.openConnection();
 		urlConnection.setRequestProperty("Authorization", "Basic " + accountKeyEnc);
@@ -52,12 +53,6 @@ public class BingSearch {
                 doc.setTitle((String) aResult.get("Title"));
                 doc.setDescription((String) aResult.get("Description"));
                 
-           /*     System.out.println("Result " + (i+1));
-                System.out.println("[");
-                System.out.println("\tURL: " + aResult.get("Url"));
-                System.out.println("\tTitle: " + aResult.get("Title"));
-                System.out.println("\tSummary: " + aResult.get("Description"));
-                System.out.println("]");*/
                 docs.add(doc);
             }
         }
@@ -69,7 +64,7 @@ public class BingSearch {
 	private String getQueryString(List<String> queries) {
 		String searchText = "";
 		for(String query : queries) {
-			searchText = query + " ";
+			searchText = searchText + query + " ";
 		}
 		searchText = searchText.trim();
 		return searchText;

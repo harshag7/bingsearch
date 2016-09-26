@@ -3,6 +3,7 @@ package edu.columbia.advancedb.bing;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 import edu.columbia.advancedb.bing.vo.AppDocument;
 
@@ -19,6 +20,7 @@ public class MainClass {
 	
 	// Will be instantiated upon execution start. Use stopWords.isStopWord(str) to check if it is stop word.
 	public static StopWords stopWords;
+	private static Scanner scan;
 
 	public static void main(String[] args) throws IOException {
 		if(args != null && args.length >= 3) {
@@ -34,15 +36,47 @@ public class MainClass {
 			BingSearch search = new BingSearch();
 			List<AppDocument> docs = search.getResults(accountKey, currentQuery);
 			
-			// TO-DO
+			//Initial output
+			System.out.println("Parameters:");
+			System.out.println("Client key - " + accountKey);
+			System.out.println("Query - " + listToKeyWords(currentQuery));
+			System.out.println("Desired Precision - " + desiredPrecision);
+			System.out.println("Total no of results - 10\nBing Search Results:\n======================");
+			
 			// Output result to User and populate relevance in AppDocument
+			getUserRelevance(docs);
 			
-			
-			// TO-DO
 			// Check if desired precision is reached else call QueryStats to get new query list
-			// while precision not reached call
-			QueryStats stats = new QueryStats();
-			List<String> query = stats.getStatistics(docs, currentQuery);
+			double currPrecision = getPrecision(docs);
+			double desiredPreInDouble = Double.parseDouble(desiredPrecision);
+			
+			while(desiredPreInDouble > currPrecision) {
+				
+				System.out.println("FEEDBACK SUMMARY:");
+				System.out.println("Precision - " + currPrecision);
+				System.out.println("Still below the desired precision of  - " + desiredPrecision);
+				System.out.println("Issuing new query");
+				
+				QueryStats stats = new QueryStats();
+				currentQuery = stats.getStatistics(docs, currentQuery);
+				
+				System.out.println("Client key - " + accountKey);
+				System.out.println("Query - " + listToKeyWords(currentQuery));
+				
+				// Start Bing Search
+				search = new BingSearch();
+				docs = search.getResults(accountKey, currentQuery);
+				
+				System.out.println("Total no of results - 10\nBing Search Results:\n======================");
+				
+				// Output result to User and populate relevance in AppDocument
+				getUserRelevance(docs);
+			}
+			
+			System.out.println("======================/nFEEDBACK SUMMARY");
+			System.out.println("Query - " + listToKeyWords(currentQuery));
+			System.out.println("Precision - " + currPrecision);
+			System.out.println("Desired precision reached, done");
 			
 			
 		} else {
@@ -52,9 +86,48 @@ public class MainClass {
 	}
 	
 	private static List<String> keyWordsToList(String keyWords) {
-		String[] keys = keyWords.split("");
+		String[] keys = keyWords.split(" ");
 		List<String> wordList = Arrays.asList(keys);  
 		return wordList;
+	}
+	
+	private static String listToKeyWords(List<String> keyWords) {
+		String keys = "";
+		for(String key: keyWords) {
+			keys = keys + key + " ";
+		}
+		return keys;
+	}
+	
+	private static void getUserRelevance(List<AppDocument> docs) {
+		for(int i=0;i< docs.size(); i++) {
+			System.out.println("Result " + (i+1));
+            System.out.println("[");
+            System.out.println("\tURL: " + docs.get(i).getUrl());
+            System.out.println("\tTitle: " + docs.get(i).getTitle());
+            System.out.println("\tSummary: " + docs.get(i).getDescription());
+            System.out.println("]\n");
+            System.out.print("Relevant (Y/N)?");
+            
+            scan = new Scanner(System.in);
+            String s = scan.next();
+            if(s.equalsIgnoreCase("y")) {
+            	docs.get(i).setRelevant(true);
+            } else {
+            	docs.get(i).setRelevant(false);
+            }
+		}
+	}
+	
+	private static double getPrecision(List<AppDocument> docs) {
+		double currentPrecision = 0;
+		for (AppDocument doc: docs) {
+			if(doc.isRelevant()) {
+				currentPrecision = currentPrecision + 0.1;
+			}
+		}
+		
+		return currentPrecision;
 	}
 
 }
