@@ -47,8 +47,8 @@ public class MainClass {
 			getUserRelevance(docs);
 			
 			// Check if desired precision is reached else call QueryStats to get new query list
-			double currPrecision = getPrecision(docs);
-			double desiredPreInDouble = Double.parseDouble(desiredPrecision);
+			float currPrecision = getPrecision(docs);
+			float desiredPreInDouble = Float.parseFloat(desiredPrecision);
 			
 			while(desiredPreInDouble > currPrecision) {
 				
@@ -71,6 +71,9 @@ public class MainClass {
 				
 				// Output result to User and populate relevance in AppDocument
 				getUserRelevance(docs);
+				
+				// Update the precision
+				currPrecision = getPrecision(docs);
 			}
 			
 			System.out.println("======================/nFEEDBACK SUMMARY");
@@ -94,7 +97,7 @@ public class MainClass {
 	private static String listToKeyWords(List<String> keyWords) {
 		String keys = "";
 		for(String key: keyWords) {
-			keys = keys + key + " ";
+			keys = keys + key.toLowerCase() + " ";
 		}
 		return keys;
 	}
@@ -119,15 +122,15 @@ public class MainClass {
 		}
 	}
 	
-	private static double getPrecision(List<AppDocument> docs) {
-		double currentPrecision = 0;
+	private static float getPrecision(List<AppDocument> docs) {
+		int numDocs = 0;
 		for (AppDocument doc: docs) {
 			if(doc.isRelevant()) {
-				currentPrecision = currentPrecision + 0.1;
+				numDocs++;
 			}
 		}
 		
-		return currentPrecision;
+		return ((numDocs * 1.0f)/docs.size());
 	}
 
 }
