@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import edu.columbia.advancedb.bing.vo.AppDocument;
 import edu.columbia.advancedb.bing.vo.AppTuple;
@@ -223,38 +224,56 @@ public class QueryStats {
 	private List<AppTuple<String, Float>> tokenizeDocument(AppDocument document) {
 		List<AppTuple<String, Float>> result = new ArrayList<>();
 		
-		// Tokenize the title. Multiple occurrences are considered as single occurrence
-		HashSet<String> occurrenceSet = new HashSet<String>();
+		// Tokenize the title. Multiple occurrences
+		// are considered as multiple occurrences and therefore,
+		// carry more preference
+		HashMap<String, Integer> occurrenceSet = new HashMap<String, Integer>();
 		String[] titleArray = document.getTitle().split(TOKENIZE_PATTERN);
 		for(int i=0; i<titleArray.length; i++) {
 			if(titleArray[i].length() > 0) {
 				// Consider only those strings which are not empty
-				if(!occurrenceSet.contains(titleArray[i].toLowerCase())) {
-					occurrenceSet.add(titleArray[i].toLowerCase());
+				if(!occurrenceSet.containsKey(titleArray[i].toLowerCase())) {
+					occurrenceSet.put(titleArray[i].toLowerCase(), 1);
+				}
+				else {
+					// Value exist. Add to the existing count
+					int oldValue = occurrenceSet.get(titleArray[i].toLowerCase());
+					occurrenceSet.put(titleArray[i].toLowerCase(), oldValue + 1);
 				}
 			}
 		}
-		Iterator<String> titleIterator = occurrenceSet.iterator();
+		Set<Entry<String,Integer>> titleEntrySet = occurrenceSet.entrySet();
+		Iterator<Entry<String,Integer>> titleIterator = titleEntrySet.iterator();
 		while(titleIterator.hasNext()) {
-			AppTuple<String, Float> tokenObj = new AppTuple<String, Float>(titleIterator.next(), TITLE_WEIGHT);
+			Entry<String,Integer> currentEntry = titleIterator.next();
+			AppTuple<String, Float> tokenObj = new AppTuple<String, Float>(currentEntry.getKey(), TITLE_WEIGHT * currentEntry.getValue());
 			result.add(tokenObj);
 			tokenObj = null;
 		}
 		
-		// Tokenize the description. Multiple occurrences are considered as single occurrence
+		// Tokenize the description. Multiple occurrences are considered
+		// as multiple occurrences and therefore, carry more preference
 		occurrenceSet.clear();
 		String[] descArray = document.getDescription().split(TOKENIZE_PATTERN);
 		for(int i=0; i<descArray.length; i++) {
 			if(descArray[i].length() > 0) {
 				// Consider only those strings which are not empty
-				if(!occurrenceSet.contains(descArray[i].toLowerCase())) {
-					occurrenceSet.add(descArray[i].toLowerCase());
+				if(!occurrenceSet.containsKey(descArray[i].toLowerCase())) {
+					occurrenceSet.put(descArray[i].toLowerCase(), 1);
+				}
+				else {
+					// Value exist. Add to the existing count
+					int oldValue = occurrenceSet.get(descArray[i].toLowerCase());
+					occurrenceSet.put(descArray[i].toLowerCase(), oldValue + 1);
 				}
 			}
 		}
-		Iterator<String> descIterator = occurrenceSet.iterator();
+		// Parse the description set
+		Set<Entry<String,Integer>> descEntrySet = occurrenceSet.entrySet();
+		Iterator<Entry<String,Integer>> descIterator = descEntrySet.iterator();
 		while(descIterator.hasNext()) {
-			AppTuple<String, Float> tokenObj = new AppTuple<String, Float>(descIterator.next(), DESCRIPTION_WEIGHT);
+			Entry<String,Integer> currentEntry = descIterator.next();
+			AppTuple<String, Float> tokenObj = new AppTuple<String, Float>(currentEntry.getKey(), DESCRIPTION_WEIGHT * currentEntry.getValue());
 			result.add(tokenObj);
 			tokenObj = null;
 		}
