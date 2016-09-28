@@ -116,9 +116,6 @@ public class QueryStats {
 			Entry<String,Float> relevantEntry = relevantTermIterator.next();
 			Float tempVal = relevantEntry.getValue();
 			double relevantVal = tempVal * Math.log10((docs.size() * 1.0)/relevantDocFreqMap.get(relevantEntry.getKey()));
-			if(relevantEntry.getKey().equalsIgnoreCase("musk")) {
-				System.out.println("Printing musk");
-			}
 			if(nonRelevantDocFreqMap.containsKey(relevantEntry.getKey())) {
 				// This term is also present in the non relevant documents
 				// Subtract the tf * idf value
