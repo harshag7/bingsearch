@@ -210,6 +210,7 @@ public class QueryStats {
 			}
 		});
 		
+		Collections.reverse(queryList);
 		// Create new Query list and return
 		List<String> newQueryList = new ArrayList<String>();
 		for(AppTuple<String, Double> tuple : queryList) {
