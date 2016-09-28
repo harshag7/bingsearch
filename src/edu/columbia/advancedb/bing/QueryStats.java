@@ -18,8 +18,8 @@ public class QueryStats {
 	private HashMap<String, Integer> nonRelevantDocFreqMap = new HashMap<>();
 	private HashMap<String, Float> relevantTermFreqMap = new HashMap<>();
 	private HashMap<String, Float> nonRelevantTermFreqMap = new HashMap<>();
-	private final Float TITLE_WEIGHT = 1.0f;
-	private final Float DESCRIPTION_WEIGHT = 1.0f;
+	private final Float TITLE_WEIGHT = 0.6f;
+	private final Float DESCRIPTION_WEIGHT = 0.4f;
 	// Tokenize on any character that is not a hyphen,apostrophe and not a word character(a-zA-Z_0-9)
 	private final String TOKENIZE_PATTERN = "[^-'\\w]";
 	
