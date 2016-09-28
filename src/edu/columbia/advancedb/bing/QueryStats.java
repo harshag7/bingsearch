@@ -20,7 +20,8 @@ public class QueryStats {
 	private HashMap<String, Float> nonRelevantTermFreqMap = new HashMap<>();
 	private final Float TITLE_WEIGHT = 1.0f;
 	private final Float DESCRIPTION_WEIGHT = 1.0f;
-	private final String TOKENIZE_PATTERN = " ";
+	// Tokenize on any character that is not a hyphen,apostrophe and not a word character(a-zA-Z_0-9)
+	private final String TOKENIZE_PATTERN = "[^-'\\w]";
 	
 	public List<String> getStatistics(List<AppDocument> docs, List<String> currentQuery) {
 		
@@ -42,9 +43,41 @@ public class QueryStats {
 			queryObj = null;
 		}
 		
+		HashSet<String> docsTermProcessSet = new HashSet<>();
 		for(int i=0; i<docs.size();i++) {
 			List<AppTuple<String, Float>> tokenList = tokenizeDocument(docs.get(i));
 			float docTFVal = 0.0f;
+			docsTermProcessSet.clear();
+			for(int j=0; j<tokenList.size(); j++) {
+				// Create the document frequency map
+				if(!docsTermProcessSet.contains(tokenList.get(j).getItem1())) {
+					// This term has not been processed yet
+					docsTermProcessSet.add(tokenList.get(j).getItem1());
+					if(docs.get(i).isRelevant()) {
+						// Add to relevant map
+						// Create the document frequency
+						if(!relevantDocFreqMap.containsKey(tokenList.get(j).getItem1())) {
+							relevantDocFreqMap.put(tokenList.get(j).getItem1(), 1);
+						}
+						else {
+							// Term already exists. Add to the term
+							int oldValue = relevantDocFreqMap.get(tokenList.get(j).getItem1());
+							relevantDocFreqMap.put(tokenList.get(j).getItem1(), oldValue + 1);
+						}
+					}
+					else {
+						// Add to non-relevant map
+						// Create the non-relevant document frequency
+						if(!nonRelevantDocFreqMap.containsKey(tokenList.get(j).getItem1())) {
+							nonRelevantDocFreqMap.put(tokenList.get(j).getItem1(), 1);
+						}
+						else {
+							int oldValue = nonRelevantDocFreqMap.get(tokenList.get(j).getItem1());
+							nonRelevantDocFreqMap.put(tokenList.get(j).getItem1(), oldValue + 1);
+						}
+					}
+				}
+			}
 			for(int j=0; j<tokenList.size();j++) {
 				// Iterate through the tokens
 				if(docs.get(i).isRelevant()) {
@@ -57,16 +90,6 @@ public class QueryStats {
 						Float oldValue = relevantTermFreqMap.get(tokenList.get(j).getItem1());
 						relevantTermFreqMap.put(tokenList.get(j).getItem1(),
 							oldValue + tokenList.get(j).getItem2());
-					}
-					
-					// Create the document frequency
-					if(!relevantDocFreqMap.containsKey(tokenList.get(j).getItem1())) {
-						relevantDocFreqMap.put(tokenList.get(j).getItem1(), 1);
-					}
-					else {
-						// Term already exists. Add to the term
-						int oldValue = relevantDocFreqMap.get(tokenList.get(j).getItem1());
-						relevantDocFreqMap.put(tokenList.get(j).getItem1(), oldValue + 1);
 					}
 				}
 				else {
@@ -81,15 +104,6 @@ public class QueryStats {
 						nonRelevantTermFreqMap.put(tokenList.get(j).getItem1(), 
 								oldValue + tokenList.get(j).getItem2());
 					}
-					
-					// Create the non-relevant document frequency
-					if(!nonRelevantDocFreqMap.containsKey(tokenList.get(j).getItem1())) {
-						nonRelevantDocFreqMap.put(tokenList.get(j).getItem1(), 1);
-					}
-					else {
-						int oldValue = nonRelevantDocFreqMap.get(tokenList.get(j).getItem1());
-						nonRelevantDocFreqMap.put(tokenList.get(j).getItem1(), oldValue + 1);
-					}
 				}
 			}
 		}
@@ -101,12 +115,15 @@ public class QueryStats {
 		while(relevantTermIterator.hasNext()) {
 			Entry<String,Float> relevantEntry = relevantTermIterator.next();
 			Float tempVal = relevantEntry.getValue();
-			double relevantVal = tempVal * Math.log10(docs.size()/relevantDocFreqMap.get(relevantEntry.getKey()));
+			double relevantVal = tempVal * Math.log10((docs.size() * 1.0)/relevantDocFreqMap.get(relevantEntry.getKey()));
+			if(relevantEntry.getKey().equalsIgnoreCase("musk")) {
+				System.out.println("Printing musk");
+			}
 			if(nonRelevantDocFreqMap.containsKey(relevantEntry.getKey())) {
 				// This term is also present in the non relevant documents
 				// Subtract the tf * idf value
 				relevantVal = relevantVal - (nonRelevantTermFreqMap.get(relevantEntry.getKey()) *
-								Math.log10(docs.size()/nonRelevantDocFreqMap.get(relevantEntry.getKey())));
+								Math.log10((docs.size() * 1.0)/nonRelevantDocFreqMap.get(relevantEntry.getKey())));
 			}
 						
 			// Check if this term is more than the maximum
@@ -152,6 +169,19 @@ public class QueryStats {
 						}
 					}
 				}
+				else {
+					// It might be possible that the relevantVal
+					// for the currentQuery is less than firstNewStringVal
+					// and secondNewStringVal. We still need to update
+					// the values for the query items. These values will be used
+					// for reordering the query
+					for(AppTuple<String, Double> termEntry: queryList) {
+						if(termEntry.getItem1().equalsIgnoreCase(relevantEntry.getKey())) {
+							termEntry.setItem2(relevantVal);
+							break;
+						}
+					}
+				}
 			}
 		}
 		
@@ -187,6 +217,7 @@ public class QueryStats {
 		List<String> newQueryList = new ArrayList<String>();
 		for(AppTuple<String, Double> tuple : queryList) {
 			newQueryList.add(tuple.getItem1());
+			System.out.println(tuple.getItem1() + ": " + tuple.getItem2());
 		}
 		return newQueryList;
 	}
@@ -198,8 +229,11 @@ public class QueryStats {
 		HashSet<String> occurrenceSet = new HashSet<String>();
 		String[] titleArray = document.getTitle().split(TOKENIZE_PATTERN);
 		for(int i=0; i<titleArray.length; i++) {
-			if(!occurrenceSet.contains(titleArray[i].toLowerCase())) {
-				occurrenceSet.add(titleArray[i].toLowerCase());
+			if(titleArray[i].length() > 0) {
+				// Consider only those strings which are not empty
+				if(!occurrenceSet.contains(titleArray[i].toLowerCase())) {
+					occurrenceSet.add(titleArray[i].toLowerCase());
+				}
 			}
 		}
 		Iterator<String> titleIterator = occurrenceSet.iterator();
@@ -213,8 +247,11 @@ public class QueryStats {
 		occurrenceSet.clear();
 		String[] descArray = document.getDescription().split(TOKENIZE_PATTERN);
 		for(int i=0; i<descArray.length; i++) {
-			if(!occurrenceSet.contains(descArray[i].toLowerCase())) {
-				occurrenceSet.add(descArray[i].toLowerCase());
+			if(descArray[i].length() > 0) {
+				// Consider only those strings which are not empty
+				if(!occurrenceSet.contains(descArray[i].toLowerCase())) {
+					occurrenceSet.add(descArray[i].toLowerCase());
+				}
 			}
 		}
 		Iterator<String> descIterator = occurrenceSet.iterator();
