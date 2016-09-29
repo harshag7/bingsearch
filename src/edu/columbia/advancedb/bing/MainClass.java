@@ -50,6 +50,12 @@ public class MainClass {
 			float currPrecision = getPrecision(docs);
 			float desiredPreInDouble = Float.parseFloat(desiredPrecision);
 			
+			if(currPrecision == 0f) {
+				System.out.println("Precision 0.0");
+				System.out.println("Cannot Augment query. Exiting");
+				System.exit(1);
+			}
+			
 			while(desiredPreInDouble > currPrecision) {
 				
 				System.out.println("FEEDBACK SUMMARY:");
@@ -74,6 +80,12 @@ public class MainClass {
 				
 				// Update the precision
 				currPrecision = getPrecision(docs);
+				
+				if(currPrecision == 0f) {
+					System.out.println("Precision 0.0");
+					System.out.println("Cannot Augment query. Exiting");
+					System.exit(1);
+				}
 			}
 			
 			System.out.println("======================/nFEEDBACK SUMMARY");
