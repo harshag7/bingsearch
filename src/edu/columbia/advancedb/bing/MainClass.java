@@ -41,7 +41,16 @@ public class MainClass {
 			System.out.println("Client key - " + accountKey);
 			System.out.println("Query - " + listToKeyWords(currentQuery));
 			System.out.println("Desired Precision - " + desiredPrecision);
-			System.out.println("Total no of results - 10\nBing Search Results:\n======================");
+			System.out.println("Total no of results - " + docs.size());
+			
+			if(docs.size() < 10) {
+				System.out.println("Returned less than 10 results in first Iteration");
+				System.out.println("Exiting");
+				System.exit(1);
+			}
+			
+			System.out.println("Bing Search Results:");
+			System.out.println("======================");
 			
 			// Output result to User and populate relevance in AppDocument
 			getUserRelevance(docs);
@@ -73,7 +82,9 @@ public class MainClass {
 				search = new BingSearch();
 				docs = search.getResults(accountKey, currentQuery);
 				
-				System.out.println("Total no of results - 10\nBing Search Results:\n======================");
+				System.out.println("Total no of results - " + docs.size());
+				System.out.println("Bing Search Results:");
+				System.out.println("======================");
 				
 				// Output result to User and populate relevance in AppDocument
 				getUserRelevance(docs);
@@ -88,7 +99,8 @@ public class MainClass {
 				}
 			}
 			
-			System.out.println("======================/nFEEDBACK SUMMARY");
+			System.out.println("======================");
+			System.out.println("FEEDBACK SUMMARY");
 			System.out.println("Query - " + listToKeyWords(currentQuery));
 			System.out.println("Precision - " + currPrecision);
 			System.out.println("Desired precision reached, done");
