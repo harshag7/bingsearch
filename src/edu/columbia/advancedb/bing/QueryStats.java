@@ -29,6 +29,7 @@ public class QueryStats {
 		// Build the relevant and non-relevant map
 		relevantTermFreqMap.clear();
 		nonRelevantTermFreqMap.clear();
+		StopWords stopWords = new StopWords();
 		AppTuple<String, Double> firstNewStringVal = new AppTuple<String, Double>(null, Double.NEGATIVE_INFINITY);
 		AppTuple<String, Double> secondNewStringVal = new AppTuple<String, Double>(null, Double.NEGATIVE_INFINITY);
 		
@@ -117,17 +118,30 @@ public class QueryStats {
 			Entry<String,Float> relevantEntry = relevantTermIterator.next();
 			Float tempVal = relevantEntry.getValue();
 			double relevantVal = tempVal * Math.log10((docs.size() * 1.0)/relevantDocFreqMap.get(relevantEntry.getKey()));
-			if(nonRelevantDocFreqMap.containsKey(relevantEntry.getKey())) {
-				// This term is also present in the non relevant documents
-				// Subtract the tf * idf value
-				relevantVal = relevantVal - (nonRelevantTermFreqMap.get(relevantEntry.getKey()) *
+			if(relevantEntry.getKey().equalsIgnoreCase("elon")) {
+				System.out.println("Musk: " + relevantVal + "    " +  tempVal);
+			}
+			if(!currentQuery.contains(relevantEntry.getKey())) {
+				// Calculate negative values only for those keys
+				// which do not appear in the current query
+				if(nonRelevantDocFreqMap.containsKey(relevantEntry.getKey())) {
+					// This term is also present in the non relevant documents
+					// Subtract the tf * idf value
+					relevantVal = relevantVal - (nonRelevantTermFreqMap.get(relevantEntry.getKey()) *
 								Math.log10((docs.size() * 1.0)/nonRelevantDocFreqMap.get(relevantEntry.getKey())));
+				}
 			}
 						
+			if(relevantEntry.getKey().equalsIgnoreCase("elon")) {
+				System.out.println("Musk: " + relevantVal);
+			}
 			// Check if this term is more than the maximum
 			if(relevantVal > firstNewStringVal.getItem2()) {
-				if(!currentQuery.contains(relevantEntry.getKey())) {
+				if(!stopWords.isStopWord(relevantEntry.getKey()) && 
+						!currentQuery.contains(relevantEntry.getKey())) {
 					// Replace the secondNewStringVal with firstNewStringVal
+					// Consider this word only if it is not a part of the current query
+					// and is also not a stop word
 					secondNewStringVal.setItem1(firstNewStringVal.getItem1());
 							secondNewStringVal.setItem2(firstNewStringVal.getItem2());
 							
@@ -152,7 +166,10 @@ public class QueryStats {
 				if(relevantVal > secondNewStringVal.getItem2()) {
 					// Greater . Replace if this entry has not been considered
 					// by the user
-					if(!currentQuery.contains(relevantEntry.getKey())) {
+					if(!stopWords.isStopWord(relevantEntry.getKey()) && 
+							!currentQuery.contains(relevantEntry.getKey())) {
+						// Consider this token only if it is not a stop word
+						// and is also not present in the current query
 						secondNewStringVal.setItem1(relevantEntry.getKey());
 						secondNewStringVal.setItem2(relevantVal);
 					}

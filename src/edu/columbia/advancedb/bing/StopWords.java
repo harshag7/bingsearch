@@ -18,7 +18,7 @@ public class StopWords {
 
 			String sCurrentLine;
 
-			br = new BufferedReader(new FileReader("/Harsha/workspace/Java_J2EE/advanceddb1/src/stop.txt"));
+			br = new BufferedReader(new FileReader("src/stop.txt"));
 
 			while ((sCurrentLine = br.readLine()) != null) {
 				words.add(sCurrentLine);
