@@ -30,6 +30,8 @@ public class QueryStats {
 		relevantTermFreqMap.clear();
 		nonRelevantTermFreqMap.clear();
 		StopWords stopWords = new StopWords();
+		String nearestWord = getNearestCommonWord(docs, currentQuery);
+		Double nearestWordWeight = Double.NEGATIVE_INFINITY;
 		AppTuple<String, Double> firstNewStringVal = new AppTuple<String, Double>(null, Double.NEGATIVE_INFINITY);
 		AppTuple<String, Double> secondNewStringVal = new AppTuple<String, Double>(null, Double.NEGATIVE_INFINITY);
 		
@@ -132,8 +134,8 @@ public class QueryStats {
 				}
 			}
 						
-			if(relevantEntry.getKey().equalsIgnoreCase("elon")) {
-				System.out.println("Musk: " + relevantVal);
+			if(relevantEntry.getKey().equalsIgnoreCase(nearestWord)) {
+				nearestWordWeight = relevantVal;
 			}
 			// Check if this term is more than the maximum
 			if(relevantVal > firstNewStringVal.getItem2()) {
@@ -207,8 +209,21 @@ public class QueryStats {
 			queryList.add(firstNewStringVal);
 		}
 		
-		if(secondNewStringVal.getItem1() != null) {
-			queryList.add(secondNewStringVal);
+		if((!isStringNullOrEmpty(nearestWord)) &&
+				(!nearestWord.equalsIgnoreCase(firstNewStringVal.getItem1())) &&
+				(!nearestWord.equalsIgnoreCase(secondNewStringVal.getItem1()))) {
+			System.out.println("Adding nearest word: " + nearestWord);
+			System.out.println("Second word: " + secondNewStringVal.getItem1());
+			queryList.add(new AppTuple<String, Double>(nearestWord, nearestWordWeight));
+		}
+		else {
+			// Add the second term only if the
+			// nearest word does not exist
+			// or the nearestWord is not equal to the first new string and second new string
+			System.out.println("Nearest Word: " + nearestWord + " but not adding it");
+			if(secondNewStringVal.getItem1() != null) {
+				queryList.add(secondNewStringVal);
+			}
 		}
 		
 		// Sort the list
@@ -236,6 +251,123 @@ public class QueryStats {
 			System.out.println(tuple.getItem1() + ": " + tuple.getItem2());
 		}
 		return newQueryList;
+	}
+	
+	// This method would fetch the word that appears just before the
+	// currentQuery in all the documents
+	// NULL if no such word exists
+	// Similar to proximity searching
+	private String getNearestCommonWord(List<AppDocument> documentList,
+			List<String> currentQuery) {
+		String queryPhrase = MainClass.listToKeyWords(currentQuery);
+		HashMap<String, Integer> freqMap = new HashMap<String, Integer>();
+		AppTuple<String, Integer> candidateNearestString = new AppTuple<String, Integer>(null, 0);
+		int numRelevantDocs = 0;
+		for(AppDocument document: documentList) {
+			if(document.isRelevant()) {
+				// Consider only relevant documents
+				// where the phrase appears as it is
+				// in the title or description
+				if((document.getTitle().toLowerCase().trim().indexOf(queryPhrase) > -1) ||
+						(document.getDescription().toLowerCase().trim().indexOf(queryPhrase) > -1)) {
+					numRelevantDocs++;
+				}
+				else {
+					// There is a document which has been marked as relevant
+					// and the phrase does not appear as it is in that document
+					// As a result, that document will not be counted in this method
+					// resulting in skewed values. Therefore, return null
+					return null;
+				}
+				
+				String candidateTitle = null;
+				int idx = document.getTitle().toLowerCase().trim().indexOf(queryPhrase);
+				if(idx > 0) {
+					// Found the phrase in title
+					// If idx is greater than 0
+					// then it means that the queryPhrase is inside the string
+					// and the string does not start with the query phrase
+					int lastSpace = idx - 1;
+					String prevWord = findPreviousWord(document.getTitle().toLowerCase().trim(), lastSpace);
+					if(!isStringNullOrEmpty(prevWord)) {
+						// Valid word
+						// Add to dictionary
+						candidateTitle = prevWord;
+						if(!freqMap.containsKey(prevWord)) {
+							freqMap.put(prevWord, 1);
+							if(1 > candidateNearestString.getItem2()) {
+								candidateNearestString.setItem1(prevWord);
+								candidateNearestString.setItem2(1);
+							}
+						}
+						else {
+							int oldValue = freqMap.get(prevWord);
+							freqMap.put(prevWord, oldValue + 1);
+							if((oldValue + 1) > candidateNearestString.getItem2()) {
+								candidateNearestString.setItem1(prevWord);
+								candidateNearestString.setItem2(oldValue + 1);
+							}
+						}
+					}
+				}
+				
+				// Repeat the same process for description
+				idx = document.getDescription().toLowerCase().trim().indexOf(queryPhrase);
+				if(idx > 0) {
+					// Found the phrase in description
+					int lastSpace = idx - 1;
+					String prevWord = findPreviousWord(document.getDescription().toLowerCase().trim(), lastSpace);
+					if(!isStringNullOrEmpty(prevWord)) {
+						// Valid word
+						// Add to dictionary
+						// only if it is different from the candidateTitle
+						// otherwise this can result in duplicate values
+						if(!prevWord.equalsIgnoreCase(candidateTitle)) {
+							if(!freqMap.containsKey(prevWord)) {
+								freqMap.put(prevWord, 1);
+								if(1 > candidateNearestString.getItem2()) {
+									candidateNearestString.setItem1(prevWord);
+									candidateNearestString.setItem2(1);
+								}
+							}
+							else {
+								int oldValue = freqMap.get(prevWord);
+								freqMap.put(prevWord, oldValue + 1);
+								if((oldValue + 1) > candidateNearestString.getItem2()) {
+									candidateNearestString.setItem1(prevWord);
+									candidateNearestString.setItem2(oldValue + 1);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return candidateNearestString.getItem1();
+	}
+	
+	// Phrase is the string in which the searching needs to be done
+	// lastPosition is the position of the character just before the current query
+	private String findPreviousWord(String phrase, int lastSpacePosition) {
+		if(phrase.charAt(lastSpacePosition) != ' ') {
+			// The character at lastPosition is not a space
+			// CurrentQuery is present as a part of a word. Not a stand-alone word
+			// Not a valid scenario
+			return null;
+		}
+		
+		int spaceIdxBeforeEligibleWord = phrase.lastIndexOf(' ', lastSpacePosition - 1);
+		String candidateWord = phrase.substring(spaceIdxBeforeEligibleWord + 1, lastSpacePosition).trim();
+		StopWords stopWords = new StopWords();
+		if(stopWords.isStopWord(candidateWord.toLowerCase())) {
+			// If the stop word is the previous word, return null
+			return null;
+		}
+		return candidateWord;
+	}
+	
+	private boolean isStringNullOrEmpty(String input) {
+		return ((input == null) || (input.trim().length() == 0));
 	}
 	
 	private List<AppTuple<String, Float>> tokenizeDocument(AppDocument document) {
