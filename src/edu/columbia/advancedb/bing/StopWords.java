@@ -21,6 +21,11 @@ public class StopWords {
 	}
 	
 	public boolean isStopWord(String word) {
+		if(word.length() <= 2) {
+			// Ignore all words whose length is less than or equal to 2
+			// as they cannot return any useful result
+			return true;
+		}
 		return words.contains(word);
 	}
 }

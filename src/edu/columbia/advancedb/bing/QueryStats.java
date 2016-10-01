@@ -19,8 +19,8 @@ public class QueryStats {
 	private HashMap<String, Integer> nonRelevantDocFreqMap = new HashMap<>();
 	private HashMap<String, Float> relevantTermFreqMap = new HashMap<>();
 	private HashMap<String, Float> nonRelevantTermFreqMap = new HashMap<>();
-	private final Float TITLE_WEIGHT = 0.6f;
-	private final Float DESCRIPTION_WEIGHT = 0.4f;
+	private final Float TITLE_WEIGHT = 0.3f;
+	private final Float DESCRIPTION_WEIGHT = 0.7f;
 	// Tokenize on any character that is not a hyphen,apostrophe and not a word character(a-zA-Z_0-9)
 	private final String TOKENIZE_PATTERN = "[^-'\\w]";
 	
@@ -120,9 +120,6 @@ public class QueryStats {
 			Entry<String,Float> relevantEntry = relevantTermIterator.next();
 			Float tempVal = relevantEntry.getValue();
 			double relevantVal = tempVal * Math.log10((docs.size() * 1.0)/relevantDocFreqMap.get(relevantEntry.getKey()));
-			if(relevantEntry.getKey().equalsIgnoreCase("elon")) {
-				System.out.println("Musk: " + relevantVal + "    " +  tempVal);
-			}
 			if(!currentQuery.contains(relevantEntry.getKey())) {
 				// Calculate negative values only for those keys
 				// which do not appear in the current query
@@ -138,18 +135,31 @@ public class QueryStats {
 				nearestWordWeight = relevantVal;
 			}
 			// Check if this term is more than the maximum
-			if(relevantVal > firstNewStringVal.getItem2()) {
+			if(relevantVal >= firstNewStringVal.getItem2()) {
 				if(!stopWords.isStopWord(relevantEntry.getKey()) && 
 						!currentQuery.contains(relevantEntry.getKey())) {
 					// Replace the secondNewStringVal with firstNewStringVal
 					// Consider this word only if it is not a part of the current query
 					// and is also not a stop word
+					// If both values are equal, then replace the values
+					// only if the length of the string replacing the
+					// first string is more
+					if(firstNewStringVal.getItem1() != null) {
+						if(firstNewStringVal.getItem2() == relevantVal) {
+							if(relevantEntry.getKey().length() <= firstNewStringVal.getItem1().length()) {
+								// Both strings are of same length
+								// Solve the tiebreaker by ignoring the smaller string
+								continue;
+							}
+						}
+					}
+					// Overwrite
 					secondNewStringVal.setItem1(firstNewStringVal.getItem1());
-							secondNewStringVal.setItem2(firstNewStringVal.getItem2());
-							
-					// Overwrite the firstNewStringVal with relevantVal
-					firstNewStringVal.setItem1(relevantEntry.getKey());
-					firstNewStringVal.setItem2(relevantVal);
+						secondNewStringVal.setItem2(firstNewStringVal.getItem2());
+						
+						// Overwrite the firstNewStringVal with relevantVal
+						firstNewStringVal.setItem1(relevantEntry.getKey());
+						firstNewStringVal.setItem2(relevantVal);
 				}
 				else {
 					// This entry has already been considered by the user
@@ -165,13 +175,24 @@ public class QueryStats {
 			else {
 				// not greater than the first value
 				// Check if greater than the second value
-				if(relevantVal > secondNewStringVal.getItem2()) {
+				if(relevantVal >= secondNewStringVal.getItem2()) {
 					// Greater . Replace if this entry has not been considered
 					// by the user
 					if(!stopWords.isStopWord(relevantEntry.getKey()) && 
 							!currentQuery.contains(relevantEntry.getKey())) {
 						// Consider this token only if it is not a stop word
 						// and is also not present in the current query
+						
+						if(secondNewStringVal.getItem1() != null) {
+							if(secondNewStringVal.getItem2() == relevantVal) {
+								if(relevantEntry.getKey().length() <= secondNewStringVal.getItem1().length()) {
+									// Both strings are of same length
+									// Solve the tiebreaker by ignoring the smaller string
+									continue;
+								}
+							}
+						}
+						// Overwrite
 						secondNewStringVal.setItem1(relevantEntry.getKey());
 						secondNewStringVal.setItem2(relevantVal);
 					}
@@ -212,15 +233,12 @@ public class QueryStats {
 		if((!isStringNullOrEmpty(nearestWord)) &&
 				(!nearestWord.equalsIgnoreCase(firstNewStringVal.getItem1())) &&
 				(!nearestWord.equalsIgnoreCase(secondNewStringVal.getItem1()))) {
-			System.out.println("Adding nearest word: " + nearestWord);
-			System.out.println("Second word: " + secondNewStringVal.getItem1());
 			queryList.add(new AppTuple<String, Double>(nearestWord, nearestWordWeight));
 		}
 		else {
 			// Add the second term only if the
 			// nearest word does not exist
 			// or the nearestWord is not equal to the first new string and second new string
-			System.out.println("Nearest Word: " + nearestWord + " but not adding it");
 			if(secondNewStringVal.getItem1() != null) {
 				queryList.add(secondNewStringVal);
 			}
