@@ -44,7 +44,7 @@ public class MainClass {
 			System.out.println("Total no of results - " + docs.size());
 			
 			if(docs.size() < 10) {
-				System.out.println("Returned less than 10 results in first Iteration");
+				System.out.println("Returned less than 10 results");
 				System.out.println("Exiting");
 				System.exit(1);
 			}
@@ -83,6 +83,13 @@ public class MainClass {
 				docs = search.getResults(accountKey, currentQuery);
 				
 				System.out.println("Total no of results - " + docs.size());
+				
+				if(docs.size() < 10) {
+					System.out.println("Returned less than 10 results");
+					System.out.println("Exiting");
+					System.exit(1);
+				}
+				
 				System.out.println("Bing Search Results:");
 				System.out.println("======================");
 				
