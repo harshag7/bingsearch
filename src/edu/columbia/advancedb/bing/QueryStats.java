@@ -358,7 +358,6 @@ public class QueryStats {
 				}
 			}
 		}
-		System.out.println(candidateNearestString.getItem1());
 		return candidateNearestString.getItem1();
 	}
 	
@@ -388,9 +387,11 @@ public class QueryStats {
 			// The first capitalized word is a proper noun and usually signifies a name
 			for(int i = splitSubPhraseArray.length - 1; i>=0; i--) {
 				counter++;
-				if(Character.isUpperCase(splitSubPhraseArray[i].charAt(0))) {
-					candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
-					break;
+				if(splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim().length() > 0) {
+					if(Character.isUpperCase(splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim().charAt(0))) {
+						candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
+						break;
+					}
 				}
 				if(counter == positionLimit) {
 					// No candidate word found in the position limits
@@ -417,9 +418,11 @@ public class QueryStats {
 			// However, increment this time
 			for(int i = 0; i < splitSubPhraseArray.length; i++) {
 				counter++;
-				if(Character.isUpperCase(splitSubPhraseArray[i].charAt(0))) {
-					candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
-					break;
+				if(splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim().length() > 0) {
+					if(Character.isUpperCase(splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim().charAt(0))) {
+						candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
+						break;
+					}
 				}
 				if(counter == positionLimit) {
 					// No candidate word found in the position limits
@@ -438,6 +441,10 @@ public class QueryStats {
 		
 		// There is no such candidate word or it was a stop word
 		// Find the nearest previous word
+		if(lastSpacePosition <= 1) {
+			// No previous word possible
+			return null;
+		}
 		int spaceIdxBeforeEligibleWord = phrase.lastIndexOf(' ', lastSpacePosition - 1);
 		candidateWord = phrase.substring(spaceIdxBeforeEligibleWord + 1, lastSpacePosition).trim();
 		
