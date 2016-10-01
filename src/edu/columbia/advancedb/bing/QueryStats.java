@@ -325,37 +325,6 @@ public class QueryStats {
 						}
 					}
 				}
-				
-				// Repeat the same process for title
-				idx = document.getTitle().toLowerCase().trim().indexOf(queryPhrase);
-				if(idx >= 0) {
-					// Found the phrase in title
-					int lastSpace = idx - 1;
-					String prevWord = findPreviousWord(document.getTitle().trim(), queryPhrase, lastSpace);
-					if(!isStringNullOrEmpty(prevWord)) {
-						// Valid word
-						// Add to dictionary
-						// only if it is different from the candidateDescription
-						// otherwise this can result in duplicate values
-						if(!prevWord.equalsIgnoreCase(candidateDescription)) {
-							if(!freqMap.containsKey(prevWord)) {
-								freqMap.put(prevWord, 1);
-								if(1 > candidateNearestString.getItem2()) {
-									candidateNearestString.setItem1(prevWord);
-									candidateNearestString.setItem2(1);
-								}
-							}
-							else {
-								int oldValue = freqMap.get(prevWord);
-								freqMap.put(prevWord, oldValue + 1);
-								if((oldValue + 1) > candidateNearestString.getItem2()) {
-									candidateNearestString.setItem1(prevWord);
-									candidateNearestString.setItem2(oldValue + 1);
-								}
-							}
-						}
-					}
-				}
 			}
 		}
 		return candidateNearestString.getItem1();
