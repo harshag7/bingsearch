@@ -12,11 +12,9 @@ import edu.columbia.advancedb.bing.vo.AppDocument;
  * Accepts arguments in below order
  * 1 - Bing Account Key
  * 2 - Desired Precision
- * 3 - Key words separated by space
+ * 3 - Key words enclosed in quotes, separated by space
  */
 public class MainClass {
-	
-	//public static String ACCOUNT_KEY = "zwdDE6X7sdfQJFaccidYZ9xFhXssOH+buQuMn2Owv9g";
 	
 	// Will be instantiated upon execution start. Use stopWords.isStopWord(str) to check if it is stop word.
 	public static StopWords stopWords;
@@ -43,11 +41,8 @@ public class MainClass {
 			System.out.println("Desired Precision - " + desiredPrecision);
 			System.out.println("Total no of results - " + docs.size());
 			
-			if(docs.size() < 10) {
-				System.out.println("Returned less than 10 results");
-				System.out.println("Exiting");
-				System.exit(1);
-			}
+			// Check if result is less than 10 and exit, if so
+			checkResultLessThan10(docs);
 			
 			System.out.println("Bing Search Results:");
 			System.out.println("======================");
@@ -59,12 +54,10 @@ public class MainClass {
 			float currPrecision = getPrecision(docs);
 			float desiredPreInDouble = Float.parseFloat(desiredPrecision);
 			
-			if(currPrecision == 0f) {
-				System.out.println("Precision 0.0");
-				System.out.println("Cannot Augment query. Exiting");
-				System.exit(1);
-			}
+			// Check if current precision is 0, exit if so
+			checkCurrentPrecision(currPrecision);
 			
+			// Check if desired precision is reached. If not, then augment query.
 			while(desiredPreInDouble > currPrecision) {
 				
 				System.out.println("FEEDBACK SUMMARY:");
@@ -84,11 +77,8 @@ public class MainClass {
 				
 				System.out.println("Total no of results - " + docs.size());
 				
-				if(docs.size() < 10) {
-					System.out.println("Returned less than 10 results");
-					System.out.println("Exiting");
-					System.exit(1);
-				}
+				// Check if result is less than 10 and exit, if so
+				checkResultLessThan10(docs);
 				
 				System.out.println("Bing Search Results:");
 				System.out.println("======================");
@@ -99,11 +89,8 @@ public class MainClass {
 				// Update the precision
 				currPrecision = getPrecision(docs);
 				
-				if(currPrecision == 0f) {
-					System.out.println("Precision 0.0");
-					System.out.println("Cannot Augment query. Exiting");
-					System.exit(1);
-				}
+				// Check if current precision is 0 and exit, if so
+				checkCurrentPrecision(currPrecision);
 			}
 			
 			System.out.println("======================");
@@ -119,12 +106,18 @@ public class MainClass {
 		}
 	}
 	
+	/*
+	 * Utility method to convert Key Words String to Array List in order.
+	 */
 	private static List<String> keyWordsToList(String keyWords) {
 		String[] keys = keyWords.split(" ");
 		List<String> wordList = Arrays.asList(keys);  
 		return wordList;
 	}
 	
+	/*
+	 * Utility method to convert List of key words back to String.
+	 */
 	public static String listToKeyWords(List<String> keyWords) {
 		String keys = "";
 		for(String key: keyWords) {
@@ -133,6 +126,9 @@ public class MainClass {
 		return keys.trim();
 	}
 	
+	/*
+	 * Method to show Bing result to User and scan relevance from User
+	 */
 	private static void getUserRelevance(List<AppDocument> docs) {
 		for(int i=0;i< docs.size(); i++) {
 			System.out.println("Result " + (i+1));
@@ -153,6 +149,9 @@ public class MainClass {
 		}
 	}
 	
+	/*
+	 * Calculate precision of docs
+	 */
 	private static float getPrecision(List<AppDocument> docs) {
 		int numDocs = 0;
 		for (AppDocument doc: docs) {
@@ -162,6 +161,28 @@ public class MainClass {
 		}
 		
 		return ((numDocs * 1.0f)/docs.size());
+	}
+	
+	/*
+	 * Safety check to see if bing returned less than 10 result and exit, if so
+	 */
+	private static void checkResultLessThan10(List<AppDocument> docs) {
+		if(docs.size() < 10) {
+			System.out.println("Returned less than 10 results");
+			System.out.println("Exiting");
+			System.exit(0);
+		}
+	}
+	
+	/*
+	 * Safety check to see if no relevant document is present and exit, if so, as query can't be augmented
+	 */
+	private static void checkCurrentPrecision(float currPrecision) {
+		if(currPrecision == 0f) {
+			System.out.println("Precision 0.0");
+			System.out.println("Cannot Augment query. Exiting");
+			System.exit(0);
+		}
 	}
 
 }

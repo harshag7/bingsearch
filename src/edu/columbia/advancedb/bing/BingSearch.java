@@ -14,6 +14,9 @@ import org.json.JSONObject;
 
 import edu.columbia.advancedb.bing.vo.AppDocument;
 
+/*
+ * Utility class to query Bing API, store results in AppDocument object
+ */
 public class BingSearch {
 
 	public static String BING_URL = "https://api.datamarket.azure.com/Bing/Search/Web";
@@ -21,7 +24,7 @@ public class BingSearch {
 	
 	public List<AppDocument> getResults(String accountKey, List<String> queries) throws IOException {
 		
-		String searchText = getQueryString(queries);
+		String searchText = MainClass.listToKeyWords(queries);
         searchText = searchText.replaceAll(" ", "%20");
 		
 		List<AppDocument> docs = new ArrayList<>();
@@ -59,15 +62,6 @@ public class BingSearch {
 		
 		
 		return docs;
-	}
-	
-	private String getQueryString(List<String> queries) {
-		String searchText = "";
-		for(String query : queries) {
-			searchText = searchText + query + " ";
-		}
-		searchText = searchText.trim();
-		return searchText;
 	}
 	
 }
