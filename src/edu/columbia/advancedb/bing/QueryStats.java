@@ -298,19 +298,16 @@ public class QueryStats {
 					return null;
 				}
 				
-				String candidateTitle = null;
-				int idx = document.getTitle().toLowerCase().trim().indexOf(queryPhrase);
-				if(idx > 0) {
-					// Found the phrase in title
-					// If idx is greater than 0
-					// then it means that the queryPhrase is inside the string
-					// and the string does not start with the query phrase
+				String candidateDescription = null;
+				int idx = document.getDescription().toLowerCase().trim().indexOf(queryPhrase);
+				if(idx >= 0) {
+					// Found the phrase in description
 					int lastSpace = idx - 1;
-					String prevWord = findPreviousWord(document.getTitle().toLowerCase().trim(), lastSpace);
+					String prevWord = findPreviousWord(document.getDescription().trim(), queryPhrase, lastSpace);
 					if(!isStringNullOrEmpty(prevWord)) {
 						// Valid word
 						// Add to dictionary
-						candidateTitle = prevWord;
+						candidateDescription = prevWord;
 						if(!freqMap.containsKey(prevWord)) {
 							freqMap.put(prevWord, 1);
 							if(1 > candidateNearestString.getItem2()) {
@@ -329,18 +326,18 @@ public class QueryStats {
 					}
 				}
 				
-				// Repeat the same process for description
-				idx = document.getDescription().toLowerCase().trim().indexOf(queryPhrase);
-				if(idx > 0) {
-					// Found the phrase in description
+				// Repeat the same process for title
+				idx = document.getTitle().toLowerCase().trim().indexOf(queryPhrase);
+				if(idx >= 0) {
+					// Found the phrase in title
 					int lastSpace = idx - 1;
-					String prevWord = findPreviousWord(document.getDescription().toLowerCase().trim(), lastSpace);
+					String prevWord = findPreviousWord(document.getTitle().trim(), queryPhrase, lastSpace);
 					if(!isStringNullOrEmpty(prevWord)) {
 						// Valid word
 						// Add to dictionary
-						// only if it is different from the candidateTitle
+						// only if it is different from the candidateDescription
 						// otherwise this can result in duplicate values
-						if(!prevWord.equalsIgnoreCase(candidateTitle)) {
+						if(!prevWord.equalsIgnoreCase(candidateDescription)) {
 							if(!freqMap.containsKey(prevWord)) {
 								freqMap.put(prevWord, 1);
 								if(1 > candidateNearestString.getItem2()) {
@@ -361,27 +358,94 @@ public class QueryStats {
 				}
 			}
 		}
+		System.out.println(candidateNearestString.getItem1());
 		return candidateNearestString.getItem1();
 	}
 	
 	// Phrase is the string in which the searching needs to be done
 	// lastPosition is the position of the character just before the current query
-	private String findPreviousWord(String phrase, int lastSpacePosition) {
-		if(phrase.charAt(lastSpacePosition) != ' ') {
-			// The character at lastPosition is not a space
-			// CurrentQuery is present as a part of a word. Not a stand-alone word
-			// Not a valid scenario
-			return null;
+	private String findPreviousWord(String phrase, String searchQuery, int lastSpacePosition) {
+		final int positionLimit = 5;
+		int counter = 0;
+		
+		String candidateWord = null;
+		StopWords stopWords = new StopWords();
+		String subPhrase = null;
+		String[] splitSubPhraseArray = null;
+		
+		if(lastSpacePosition > -1) {
+			if(phrase.charAt(lastSpacePosition) != ' ') {
+				// The character at lastPosition is not a space
+				// CurrentQuery is present as a part of a word. Not a stand-alone word
+				// Not a valid scenario
+				return null;
+			}
+			subPhrase = phrase.substring(0, lastSpacePosition);
+			splitSubPhraseArray = subPhrase.split(" ");
+			
+			// Find the first capitalized word from reverse
+			// Read the array in reverse and find the first capitalized word
+			// The first capitalized word is a proper noun and usually signifies a name
+			for(int i = splitSubPhraseArray.length - 1; i>=0; i--) {
+				counter++;
+				if(Character.isUpperCase(splitSubPhraseArray[i].charAt(0))) {
+					candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
+					break;
+				}
+				if(counter == positionLimit) {
+					// No candidate word found in the position limits
+					break;
+				}
+			}
+			
+			if(candidateWord != null) {
+				// There is such a capitalized word. Check if it is a stop word
+				if(!stopWords.isStopWord(candidateWord)) {
+					// this is a valid word. Return this word
+					return candidateWord.toLowerCase();
+				}
+			}
 		}
 		
+		// Repeat the same for words that appear after the phrase
+		counter = 0;
+		if((lastSpacePosition + searchQuery.length()) < (phrase.length() - 2)) {
+			// There can be a capital word that exists after the searchQuery
+			subPhrase = phrase.substring(lastSpacePosition + searchQuery.length());
+			splitSubPhraseArray = subPhrase.split(" ");
+			// Repeat the same process as we did above
+			// However, increment this time
+			for(int i = 0; i < splitSubPhraseArray.length; i++) {
+				counter++;
+				if(Character.isUpperCase(splitSubPhraseArray[i].charAt(0))) {
+					candidateWord = splitSubPhraseArray[i].replaceAll(TOKENIZE_PATTERN, "").trim();
+					break;
+				}
+				if(counter == positionLimit) {
+					// No candidate word found in the position limits
+					break;
+				}
+			}
+			
+			if(candidateWord != null) {
+				// There is such a capitalized word. Check if it is a stop word
+				if(!stopWords.isStopWord(candidateWord)) {
+					// this is a valid word. Return this word
+					return candidateWord.toLowerCase();
+				}
+			}
+		}
+		
+		// There is no such candidate word or it was a stop word
+		// Find the nearest previous word
 		int spaceIdxBeforeEligibleWord = phrase.lastIndexOf(' ', lastSpacePosition - 1);
-		String candidateWord = phrase.substring(spaceIdxBeforeEligibleWord + 1, lastSpacePosition).trim();
-		StopWords stopWords = new StopWords();
+		candidateWord = phrase.substring(spaceIdxBeforeEligibleWord + 1, lastSpacePosition).trim();
+		
 		if(stopWords.isStopWord(candidateWord.toLowerCase())) {
 			// If the stop word is the previous word, return null
 			return null;
 		}
-		return candidateWord;
+		return candidateWord.toLowerCase();
 	}
 	
 	private boolean isStringNullOrEmpty(String input) {

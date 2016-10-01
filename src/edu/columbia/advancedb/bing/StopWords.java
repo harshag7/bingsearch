@@ -26,6 +26,6 @@ public class StopWords {
 			// as they cannot return any useful result
 			return true;
 		}
-		return words.contains(word);
+		return words.contains(word.toLowerCase());
 	}
 }
