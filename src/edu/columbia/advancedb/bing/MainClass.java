@@ -125,12 +125,12 @@ public class MainClass {
 		return wordList;
 	}
 	
-	private static String listToKeyWords(List<String> keyWords) {
+	public static String listToKeyWords(List<String> keyWords) {
 		String keys = "";
 		for(String key: keyWords) {
 			keys = keys + key.toLowerCase() + " ";
 		}
-		return keys;
+		return keys.trim();
 	}
 	
 	private static void getUserRelevance(List<AppDocument> docs) {
