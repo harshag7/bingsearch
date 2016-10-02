@@ -266,7 +266,7 @@ public class QueryStats {
 		List<String> newQueryList = new ArrayList<String>();
 		for(AppTuple<String, Double> tuple : queryList) {
 			newQueryList.add(tuple.getItem1());
-			System.out.println(tuple.getItem1() + ": " + tuple.getItem2());
+		//	System.out.println(tuple.getItem1() + ": " + tuple.getItem2());
 		}
 		return newQueryList;
 	}
