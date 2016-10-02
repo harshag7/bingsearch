@@ -22,7 +22,7 @@ public class QueryStats {
 	private final Float TITLE_WEIGHT = 0.3f;
 	private final Float DESCRIPTION_WEIGHT = 0.7f;
 	// Tokenize on any character that is not a hyphen,apostrophe and not a word character(a-zA-Z_0-9)
-	private final String TOKENIZE_PATTERN = "[^-'\\w]";
+	private final String TOKENIZE_PATTERN = "[^'\\w]";
 	
 	public List<String> getStatistics(List<AppDocument> docs, List<String> currentQuery) {
 		
