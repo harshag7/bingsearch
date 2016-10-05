@@ -1,6 +1,7 @@
 package edu.columbia.advancedb.bing;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
@@ -66,7 +67,16 @@ public class MainClass {
 				System.out.println("Issuing new query");
 				
 				QueryStats stats = new QueryStats();
+				List<String> tempQuery = new ArrayList<String>(currentQuery);
 				currentQuery = stats.getStatistics(docs, currentQuery);
+				// Loop through the elements so that we can display the augmenting list
+				System.out.print("Augmenting by");
+				for(String s: currentQuery) {
+					if(!tempQuery.contains(s)) {
+						System.out.print(" " + s);
+					}
+				}
+				System.out.println();
 				
 				System.out.println("Client key - " + accountKey);
 				System.out.println("Query - " + listToKeyWords(currentQuery));
