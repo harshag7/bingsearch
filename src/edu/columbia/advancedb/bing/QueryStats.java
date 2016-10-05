@@ -15,10 +15,10 @@ import edu.columbia.advancedb.bing.vo.AppTuple;
 
 public class QueryStats {
 
-	private HashMap<String, Integer> relevantDocFreqMap = new HashMap<>();
-	private HashMap<String, Integer> nonRelevantDocFreqMap = new HashMap<>();
-	private HashMap<String, Float> relevantTermFreqMap = new HashMap<>();
-	private HashMap<String, Float> nonRelevantTermFreqMap = new HashMap<>();
+	private HashMap<String, Integer> relevantDocFreqMap = new HashMap<String, Integer>();
+	private HashMap<String, Integer> nonRelevantDocFreqMap = new HashMap<String, Integer>();
+	private HashMap<String, Float> relevantTermFreqMap = new HashMap<String, Float>();
+	private HashMap<String, Float> nonRelevantTermFreqMap = new HashMap<String, Float>();
 	private final Float TITLE_WEIGHT = 0.3f;
 	private final Float DESCRIPTION_WEIGHT = 0.7f;
 	// Tokenize on any character that is not a hyphen,apostrophe and not a word character(a-zA-Z_0-9)
@@ -47,7 +47,7 @@ public class QueryStats {
 			queryObj = null;
 		}
 		
-		HashSet<String> docsTermProcessSet = new HashSet<>();
+		HashSet<String> docsTermProcessSet = new HashSet<String>();
 		for(int i=0; i<docs.size();i++) {
 			List<AppTuple<String, Float>> tokenList = tokenizeDocument(docs.get(i));
 			float docTFVal = 0.0f;
@@ -146,9 +146,35 @@ public class QueryStats {
 					// first string is more
 					if(firstNewStringVal.getItem1() != null) {
 						if(firstNewStringVal.getItem2() == relevantVal) {
-							if(relevantEntry.getKey().length() <= firstNewStringVal.getItem1().length()) {
+							if(relevantEntry.getKey().length() < firstNewStringVal.getItem1().length()) {
 								// Both strings are of same length
-								// Solve the tiebreaker by ignoring the smaller string
+								// Solve the tiebreaker by assigning the smaller string
+								// to the second new string val if required
+								// The relevantEntry is smaller length than the first string
+								// Check if it is smaller length than the second string
+								if(secondNewStringVal.getItem1() == null) {
+									secondNewStringVal.setItem1(relevantEntry.getKey());
+									secondNewStringVal.setItem2(relevantVal);
+								}
+								else {
+									// second new string is populated
+									if(secondNewStringVal.getItem2() == relevantVal) {
+										// Values are equal. Check length
+										if(secondNewStringVal.getItem1().length() < relevantEntry.getKey().length()) {
+											// This is a longer term
+											secondNewStringVal.setItem1(relevantEntry.getKey());
+											secondNewStringVal.setItem2(relevantVal);
+										}
+									}
+									else {
+										// Straight replace
+										// since the second string will certainly have lower
+										// weight than the first string
+										// This is a longer term
+										secondNewStringVal.setItem1(relevantEntry.getKey());
+										secondNewStringVal.setItem2(relevantVal);
+									}
+								}
 								continue;
 							}
 						}
@@ -333,7 +359,7 @@ public class QueryStats {
 	// Phrase is the string in which the searching needs to be done
 	// lastPosition is the position of the character just before the current query
 	private String findPreviousWord(String phrase, String searchQuery, int lastSpacePosition) {
-		final int positionLimit = 5;
+		final int positionLimit = 2;
 		int counter = 0;
 		
 		String candidateWord = null;
@@ -429,7 +455,7 @@ public class QueryStats {
 	}
 	
 	private List<AppTuple<String, Float>> tokenizeDocument(AppDocument document) {
-		List<AppTuple<String, Float>> result = new ArrayList<>();
+		List<AppTuple<String, Float>> result = new ArrayList<AppTuple<String, Float>>();
 		
 		// Tokenize the title. Multiple occurrences
 		// are considered as multiple occurrences and therefore,

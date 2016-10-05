@@ -27,7 +27,7 @@ public class BingSearch {
 		String searchText = MainClass.listToKeyWords(queries);
         searchText = searchText.replaceAll(" ", "%20");
 		
-		List<AppDocument> docs = new ArrayList<>();
+		List<AppDocument> docs = new ArrayList<AppDocument>();
 		String query=BING_URL + "?Query=%27" + searchText + "%27&" + EXTRA_PARAMS;
 		
 		byte[] accountKeyBytes = Base64.encodeBase64((accountKey + ":" + accountKey).getBytes());
@@ -37,8 +37,9 @@ public class BingSearch {
 		URL url = new URL(query);
 		URLConnection urlConnection = url.openConnection();
 		urlConnection.setRequestProperty("Authorization", "Basic " + accountKeyEnc);
-				
-		try (final BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+		final BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));		
+		try 
+		{
             String inputLine;
             final StringBuilder response = new StringBuilder();
             while ((inputLine = in.readLine()) != null) {
@@ -59,7 +60,10 @@ public class BingSearch {
                 docs.add(doc);
             }
         }
-		
+		catch(Exception ex) {
+			// Catch exception
+			System.out.println("Sorry. An unexpected error occurred while sending request to Bing");
+		}
 		
 		return docs;
 	}
